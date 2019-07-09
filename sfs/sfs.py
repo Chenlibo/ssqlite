@@ -107,14 +107,15 @@ def open(file_name, mode='r', buffering=io.DEFAULT_BUFFER_SIZE, encoding=None):
         encoding = locale.getpreferredencoding(False)
 
     f_ptr = ctypes.pointer(Nfs4_file()) 
+    #TODO extract error handling  into a function call
     error_code = c_helper.nfs4_open(client, file_name.encode('utf-8'), flags, ctypes.byref(p), f_ptr)
     if error_code != NFS4_OK:
-
         if error_code == NFS4ERR_NOENT:
-            raise FileNotFoundError("[Errno 2] No such file or directory: " + "'" + file_name + "'")
+            raise FileNotFoundError(f"[Errno {error_code}] No such file or directory: '{file_name}'")
         if error_code == NFS4ERR_ACCESS:
-            raise PermissionError("[Errno 13] Permission denied: " + "'" + file_name + "'")
+            raise PermissionError(f"[Errno {error_code}] Permission denied: '{file_name}'")
         raise IOError(error_code, get_client_error_msg(client), file_name)
+ 
     f = FileObjectWrapper(f_ptr.contents, flags, encoding)
 
     if buffering > 1:
